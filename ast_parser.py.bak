@@ -1,0 +1,15 @@
+from clang import cindex
+
+cindex.Config.set_library_file(
+    "/opt/homebrew/opt/llvm/lib/libclang.dylib"
+)
+
+
+def parse_cpp_file(filename, extra_args=None):
+    index = cindex.Index.create()
+    default_args = [
+        "-x", "c++",
+        "-std=gnu++17",
+    ]
+    args = default_args + (extra_args or [])
+    return index.parse(filename, args=args)
