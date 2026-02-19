@@ -1,0 +1,50 @@
+{
+  "name": "walker-app",
+  "version": "1.0.0",
+  "description": "Walker desktop app",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "test:ui:line-preview": "node scripts/run-ui-line-preview-test.js",
+    "start": "electron .",
+    "clean:attrs": "node scripts/clean-attrs.js",
+    "pack": "npm run clean:attrs && electron-builder --dir",
+    "dist": "npm run clean:attrs && electron-builder",
+    "dist:mac": "npm run clean:attrs && electron-builder --mac dmg",
+    "dist:win": "npm run clean:attrs && electron-builder --win --x64",
+    "build:backend:mac": "bash scripts/build-backend-mac.sh",
+    "build:backend:win": "powershell -ExecutionPolicy Bypass -File scripts/build-backend-win.ps1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {},
+  "build": {
+    "appId": "com.walker.app",
+    "productName": "Walker",
+    "files": [
+      "**/*"
+    ],
+    "mac": {
+      "target": "dmg",
+      "identity": null
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "extraResources": [
+      {
+        "from": "backend",
+        "to": "backend",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ]
+  },
+  "devDependencies": {
+    "electron": "^40.2.1",
+    "electron-builder": "^26.7.0"
+  }
+}

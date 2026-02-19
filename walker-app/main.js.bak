@@ -1,0 +1,145 @@
+const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+const path = require('path');
+const fs = require('fs');
+const os = require('os');
+const { spawn } = require('child_process');
+
+const DEFAULT_PY = '/Users/genesisfernandez/Desktop/walker/.venv/bin/python';
+const DEFAULT_SCRIPT = '/Users/genesisfernandez/Desktop/walker/test_engine.py';
+
+function getBackendPaths() {
+  const pythonPath = process.env.WALKER_PY || DEFAULT_PY;
+  const scriptPath = process.env.WALKER_SCRIPT || DEFAULT_SCRIPT;
+  return { pythonPath, scriptPath };
+}
+
+function createWindow() {
+  const win = new BrowserWindow({
+    width: 1100,
+    height: 720,
+    minWidth: 900,
+    minHeight: 600,
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false,
+    },
+  });
+
+  win.loadFile(path.join(__dirname, 'index.html'));
+}
+
+app.whenReady().then(() => {
+  createWindow();
+
+  app.on('activate', () => {
+    if (BrowserWindow.getAllWindows().length === 0) {
+      createWindow();
+    }
+  });
+});
+
+app.on('window-all-closed', () => {
+  if (process.platform !== 'darwin') {
+    app.quit();
+  }
+});
+
+ipcMain.handle('run-analysis', async (_event, payload) => {
+  const { files, code } = payload || {};
+  const { pythonPath, scriptPath } = getBackendPaths();
+
+  if (!fs.existsSync(pythonPath)) {
+    return { ok: false, error: `Python not found at ${pythonPath}` };
+  }
+  if (!fs.existsSync(scriptPath)) {
+    return { ok: false, error: `Backend script not found at ${scriptPath}` };
+  }
+
+  let tempFile = null;
+  const fileArgs = Array.isArray(files) ? files.filter(Boolean) : [];
+
+  if (code && code.trim()) {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'walker-'));
+    tempFile = path.join(tmpDir, 'pasted.cpp');
+    fs.writeFileSync(tempFile, code, 'utf-8');
+    fileArgs.push(tempFile);
+  }
+
+  if (!fileArgs.length) {
+    return { ok: false, error: 'No files or code provided.' };
+  }
+
+  return await new Promise((resolve) => {
+    const child = spawn(pythonPath, [scriptPath, ...fileArgs], {
+      cwd: path.dirname(scriptPath),
+      env: process.env,
+    });
+
+    let stdout = '';
+    let stderr = '';
+
+    child.stdout.on('data', (data) => {
+      stdout += data.toString();
+    });
+
+    child.stderr.on('data', (data) => {
+      stderr += data.toString();
+    });
+
+    child.on('close', (code) => {
+      if (tempFile) {
+        try {
+          fs.unlinkSync(tempFile);
+        } catch (err) {
+          // ignore cleanup errors
+        }
+      }
+
+      const rawOut = stdout.trim();
+
+      if (code !== 0) {
+        const message = stderr.trim() || `Process exited with code ${code}`;
+        resolve({ ok: false, error: message, stdout: rawOut });
+        return;
+      }
+
+      if (!rawOut) {
+        resolve({ ok: false, error: 'No output from backend.' });
+        return;
+      }
+
+      try {
+        const parsed = JSON.parse(rawOut);
+        if (!parsed || parsed.ok === false) {
+          resolve({
+            ok: false,
+            error: parsed?.error || 'Backend reported an error.',
+            data: parsed || null,
+          });
+          return;
+        }
+        resolve({ ok: true, data: parsed });
+      } catch (err) {
+        resolve({
+          ok: false,
+          error: 'Failed to parse backend JSON.',
+          stdout: rawOut,
+        });
+      }
+    });
+  });
+});
+
+ipcMain.handle('select-files', async () => {
+  const result = await dialog.showOpenDialog({
+    properties: ['openFile', 'multiSelections'],
+    filters: [{ name: 'C++ Files', extensions: ['cpp', 'cc', 'cxx', 'h', 'hpp'] }],
+  });
+
+  if (result.canceled) {
+    return { ok: true, files: [] };
+  }
+
+  return { ok: true, files: result.filePaths };
+});

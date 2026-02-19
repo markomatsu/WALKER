@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Walker</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="hero">
+        <div>
+          <p class="eyebrow">Walker</p>
+          <h1>Explain C++ code with a clean, deterministic summary.</h1>
+          <p class="subhead">Drop files or paste code. We will generate explanations using your rule-based engine.</p>
+        </div>
+        <div class="hero-panel">
+          <div class="status" data-status data-tone="neutral"></div>
+          <div class="actions">
+            <button class="primary" data-run>Analyze</button>
+            <button class="ghost" data-pick>Select Files</button>
+          </div>
+        </div>
+      </header>
+
+      <main class="grid">
+        <section class="card">
+          <div class="card-head">
+            <h2>Files</h2>
+            <button class="ghost small" data-clear-files hidden>Clear</button>
+          </div>
+          <div class="dropzone" data-dropzone>
+            <p>Drag and drop .cpp files here</p>
+            <p class="hint">You can also select files using the button above.</p>
+          </div>
+          <div class="file-list" data-filelist>No files selected.</div>
+        </section>
+
+        <section class="card">
+          <div class="card-head">
+            <h2>Paste Code</h2>
+            <button class="ghost small" data-clear-code hidden>Clear</button>
+          </div>
+          <textarea class="code" data-code placeholder="Paste C++ code here..."></textarea>
+        </section>
+
+        <section class="card output">
+          <div class="output-toolbar">
+            <h2>Explanation Output</h2>
+            <div class="output-filters">
+              <label>
+                Severity
+                <select data-filter-severity>
+                  <option value="all">All</option>
+                  <option value="error">Errors</option>
+                  <option value="warning">Warnings</option>
+                  <option value="info">Info</option>
+                </select>
+              </label>
+              <label>
+                Topic
+                <select data-filter-topic>
+                  <option value="all">All</option>
+                  <option value="loops">Loops</option>
+                  <option value="conditionals">Conditionals</option>
+                  <option value="functions">Functions</option>
+                  <option value="classes">Classes</option>
+                  <option value="other">Other</option>
+                </select>
+              </label>
+              <button class="ghost small" data-copy-all hidden title="Copy only" aria-label="Copy only">⎘</button>
+              <button class="ghost small" data-print-all hidden title="Print" aria-label="Print">⎙</button>
+              <button class="ghost small" data-export-json hidden>Export JSON</button>
+              <button class="ghost small" data-export-text hidden>Export Text</button>
+              <button class="ghost small" data-toggle-sections hidden>Collapse Sections</button>
+            </div>
+          </div>
+          <div class="output-area" data-output></div>
+          <section class="source-preview" data-source-panel>
+            <div class="source-preview-header">
+              <h3>Source Preview</h3>
+              <p data-source-file>No source selected.</p>
+            </div>
+            <div class="source-code" data-source-code>
+              Click a line label in the results to preview the source here.
+            </div>
+          </section>
+        </section>
+      </main>
+    </div>
+
+    <script src="renderer.js"></script>
+  </body>
+</html>

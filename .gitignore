@@ -2,3 +2,6 @@
 __pycache__/
 *.pyc
 .DS_Store
+walker-app/dist/
+walker-app/node_modules/
+walker-app/backend/walker-backend/_internal/

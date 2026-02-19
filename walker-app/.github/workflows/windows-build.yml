@@ -1,0 +1,62 @@
+name: Build Windows Installer
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "walker-app/**"
+      - "walker/**"
+
+jobs:
+  build-win:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: pwsh
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: "walker-app/package-lock.json"
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install LLVM
+        run: choco install llvm -y
+
+      - name: Setup Analyzer Venv
+        run: |
+          python -m venv walker/.venv
+          walker/.venv/Scripts/python -m pip install --upgrade pip
+          walker/.venv/Scripts/python -m pip install clang pyinstaller
+
+      - name: Install App Dependencies
+        working-directory: walker-app
+        run: npm ci
+
+      - name: Build Windows Backend
+        working-directory: walker-app
+        run: npm run build:backend:win
+
+      - name: Build Windows Installer
+        working-directory: walker-app
+        run: npm run dist -- --win --x64
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: walker-windows-installer
+          path: |
+            walker-app/dist/*.exe
+            walker-app/dist/*.blockmap
